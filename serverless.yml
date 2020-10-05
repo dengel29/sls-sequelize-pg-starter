@@ -1,0 +1,52 @@
+service: sls-new-project
+custom:
+  env:
+    prod: 
+      stage: production
+      db_dialect: "postgres"
+      db_name: sls-starter-production
+      db_username: root
+      db_password: "123456"
+      db_host: rds-endpoint.12345321.us-east-1.rds.amazonaws.com
+      db_port: "5432"
+    dev: 
+      stage: development
+      db_dialect: "postgres"
+      db_name: sls-starter
+      db_username: dengel
+      db_password: null
+      db_host: 127.0.0.1
+      db_port: "5432"
+layers:
+  pg:
+    path: layer
+provider:
+  name: aws
+  runtime: nodejs12.x
+  vpc: 
+    securityGroupIds: 
+      - sg-8888888
+    subnetIds:
+      - subnet-88888899
+      - subnet-22222222
+  region: us-east-1
+  stage: ${opt:stage, 'dev'}
+  environment:
+    DB_DIALECT: ${self:custom.env.${self:provider.stage}.db_dialect}
+    DB_NAME: ${self:custom.env.${self:provider.stage}.db_name}
+    DB_USERNAME: ${self:custom.env.${self:provider.stage}.db_username}
+    DB_PASSWORD: ${self:custom.env.${self:provider.stage}.db_password}
+    DB_HOST: ${self:custom.env.${self:provider.stage}.db_host}
+    DB_PORT: ${self:custom.env.${self:provider.stage}.db_port}
+    NODE_ENV: ${self:custom.env.${self:provider.stage}.stage}
+functions:
+  app:
+    handler: handler.index
+    events:
+      - http: ANY /
+      - http: 'ANY {proxy+}'
+    layers:
+      - {Ref: PgLambdaLayer}
+plugins:
+  - serverless-offline
+  - serverless-sequelize-migrations
